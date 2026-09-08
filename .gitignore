@@ -1,0 +1,21 @@
+# JVM
+backend/target/
+*.class
+# Node / Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+# Capacitor / Android build outputs
+frontend/android/app/build/
+frontend/android/build/
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/android/app/src/main/assets/public/
+# env & data
+.env
+data/
+*.log
+.DS_Store
+.idea/
+*.iml
+.vscode/
