@@ -1,0 +1,29 @@
+# Test profile: datasource comes from Testcontainers via @DynamicPropertySource; everything else deterministic
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 4
+  mail:
+    host: localhost
+    port: 1025
+  task:
+    scheduling:
+      pool:
+        size: 1
+
+docshelf:
+  master-key: ZG9jc2hlbGYtZGV2LW9ubHktbWFzdGVyLWtleS0zMmI=
+  api-token: test-token
+  blob-dir: ./target/test-blobs
+  timezone: Asia/Kolkata
+  openai:
+    api-key: ""
+    vision-enabled: true
+  whatsapp:
+    provider: STUB
+
+logging:
+  level:
+    com.docshelf: DEBUG
+    org.testcontainers: WARN
+    com.github.dockerjava: WARN

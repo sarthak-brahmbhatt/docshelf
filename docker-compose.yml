@@ -1,0 +1,107 @@
+# DocShelf local stack: postgres (pgvector) + mailpit + backend (Spring Boot) + frontend (Angular behind nginx)
+name: docshelf
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: docshelf-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-docshelf}
+      POSTGRES_USER: ${POSTGRES_USER:-docshelf}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docshelf}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      # Only reachable from this machine (local dev with `make backend-run`, psql, backups).
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-docshelf} -d ${POSTGRES_DB:-docshelf}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: docshelf-mailpit
+    restart: unless-stopped
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    ports:
+      # Web UI and SMTP, local machine only. Reminder e-mails land here instead of a real inbox.
+      - "127.0.0.1:8025:8025"
+      - "127.0.0.1:1025:1025"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: docshelf-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    env_file:
+      - path: .env
+        required: false
+    # Values here override .env inside the container. Everything has a default so the stack
+    # boots with no .env at all (AI features then degrade; see README "First run").
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-docshelf}
+      POSTGRES_USER: ${POSTGRES_USER:-docshelf}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docshelf}
+      MAIL_HOST: mailpit
+      MAIL_PORT: "1025"
+      # Default is a fixed, PUBLIC dev key (valid 32-byte base64) so the stack boots without .env. Replace via make key.
+      DOCSHELF_MASTER_KEY: ${DOCSHELF_MASTER_KEY:-ZGV2LW9ubHktaW5zZWN1cmUta2V5LTAwMDAwMDAwMDA=}
+      DOCSHELF_API_TOKEN: ${DOCSHELF_API_TOKEN:-change-me-docshelf-dev-token}
+      DOCSHELF_MAX_UPLOAD_MB: ${DOCSHELF_MAX_UPLOAD_MB:-200}
+      DOCSHELF_BLOB_DIR: /data/blobs
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-4.1}
+      OPENAI_EXTRACT_MODEL: ${OPENAI_EXTRACT_MODEL:-gpt-4.1-mini}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_TRANSCRIPTION_MODEL: ${OPENAI_TRANSCRIPTION_MODEL:-gpt-4o-mini-transcribe}
+      DOCSHELF_VISION_ENABLED: ${DOCSHELF_VISION_ENABLED:-true}
+      DOCSHELF_MAIL_FROM: ${DOCSHELF_MAIL_FROM:-docshelf@localhost}
+      DOCSHELF_MAIL_TO: ${DOCSHELF_MAIL_TO:-owner@localhost}
+      WHATSAPP_PROVIDER: ${WHATSAPP_PROVIDER:-STUB}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
+      WHATSAPP_TEMPLATE_NAME: ${WHATSAPP_TEMPLATE_NAME:-docshelf_share}
+      DOCSHELF_TIMEZONE: ${DOCSHELF_TIMEZONE:-Asia/Kolkata}
+    volumes:
+      - blobs:/data/blobs
+    ports:
+      # Bound on all interfaces on purpose: the Android app on the same Wi-Fi talks to this port.
+      # Access is gated by DOCSHELF_API_TOKEN. Change the mapping to "127.0.0.1:8080:8080" for web-only use.
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health || wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: docshelf-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      # nginx serves the Angular app and proxies /api and /actuator to backend:8080.
+      - "4200:80"
+
+volumes:
+  pgdata:
+  blobs:

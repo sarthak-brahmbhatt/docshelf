@@ -1,0 +1,111 @@
+# DocShelf backend configuration: every value is env-overridable; defaults are for local development only
+server:
+  port: 8080
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: docshelf
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:docshelf}
+    username: ${POSTGRES_USER:docshelf}
+    password: ${POSTGRES_PASSWORD:docshelf}
+    hikari:
+      maximum-pool-size: 10
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      # The schema is owned by Flyway (db/migration/V1__init.sql); Hibernate only validates the mapping.
+      # Notes on validation: TSVECTOR generated column document_chunk.tsv is intentionally not mapped
+      # (Postgres computes it); CHAR(n) columns are mapped with @JdbcTypeCode(SqlTypes.CHAR);
+      # VECTOR(1536) is mapped through hibernate-vector (@JdbcTypeCode(SqlTypes.VECTOR)).
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 50
+        order_inserts: true
+  servlet:
+    multipart:
+      max-file-size: ${DOCSHELF_MAX_UPLOAD_MB:200}MB
+      max-request-size: ${DOCSHELF_MAX_UPLOAD_MB:200}MB
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+          connectiontimeout: 5000
+          timeout: 10000
+          writetimeout: 10000
+  jackson:
+    time-zone: Asia/Kolkata
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+  task:
+    scheduling:
+      pool:
+        size: 4
+      thread-name-prefix: docshelf-sched-
+    execution:
+      thread-name-prefix: docshelf-async-
+      pool:
+        core-size: 4
+        max-size: 8
+        queue-capacity: 100
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+
+docshelf:
+  # DEV-ONLY default master key (base64 of 32 bytes). Set DOCSHELF_MASTER_KEY in .env for any real data.
+  master-key: ${DOCSHELF_MASTER_KEY:ZG9jc2hlbGYtZGV2LW9ubHktbWFzdGVyLWtleS0zMmI=}
+  api-token: ${DOCSHELF_API_TOKEN:dev-token}
+  blob-dir: ${DOCSHELF_BLOB_DIR:./data/blobs}
+  max-upload-mb: ${DOCSHELF_MAX_UPLOAD_MB:200}
+  timezone: ${DOCSHELF_TIMEZONE:Asia/Kolkata}
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    chat-model: ${OPENAI_CHAT_MODEL:gpt-4.1}
+    extract-model: ${OPENAI_EXTRACT_MODEL:gpt-4.1-mini}
+    embedding-model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    transcription-model: ${OPENAI_TRANSCRIPTION_MODEL:gpt-4o-transcribe}
+    vision-enabled: ${OPENAI_VISION_ENABLED:true}
+    timeout-seconds: ${OPENAI_TIMEOUT_SECONDS:120}
+    max-retries: ${OPENAI_MAX_RETRIES:2}
+  mail:
+    from: ${DOCSHELF_MAIL_FROM:docshelf@localhost}
+    to: ${DOCSHELF_MAIL_TO:}
+  whatsapp:
+    provider: ${WHATSAPP_PROVIDER:STUB}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+    token: ${WHATSAPP_TOKEN:}
+    template-name: ${WHATSAPP_TEMPLATE_NAME:docshelf_document}
+
+logging:
+  level:
+    root: INFO
+    com.docshelf: INFO
+    org.hibernate.SQL: WARN
+    org.flywaydb: INFO
