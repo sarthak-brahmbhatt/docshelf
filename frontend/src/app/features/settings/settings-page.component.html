@@ -1,0 +1,163 @@
+<!-- Settings page template: server connection, voice, device capabilities -->
+<h1 class="page-title">Settings</h1>
+
+@if (settings.needsBaseUrl()) {
+  <div class="notice warn" role="alert">
+    <mat-icon>cloud_off</mat-icon>
+    <span>
+      Set the DocShelf server URL to use the app on this phone, e.g.
+      <code>http://192.168.1.10:8080</code> (the Mac or server running the backend on your Wi-Fi).
+    </span>
+  </div>
+}
+@if (unauthorizedHint()) {
+  <div class="notice warn" role="alert">
+    <mat-icon>key_off</mat-icon>
+    <span>The server rejected the API token. Paste the value of <code>DOCSHELF_API_TOKEN</code> from the server's <code>.env</code>.</span>
+  </div>
+}
+
+<form [formGroup]="form" (ngSubmit)="save()" class="settings-form">
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Server connection</mat-card-title>
+      <mat-card-subtitle>Stored only on this device</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-form-field class="full">
+        <mat-label>API base URL</mat-label>
+        <input
+          matInput
+          formControlName="apiBaseUrl"
+          placeholder="http://192.168.1.10:8080"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          inputmode="url"
+        />
+        <mat-icon matPrefix>dns</mat-icon>
+        <mat-hint>
+          @if (platform.isNative()) {
+            Required on Android. Backend host and port, no path.
+          } @else {
+            Leave empty to use this site's own origin (nginx proxies /api/ to the backend).
+          }
+        </mat-hint>
+        @if (form.controls.apiBaseUrl.hasError('pattern')) {
+          <mat-error>Enter a host like http://192.168.1.10:8080</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field class="full">
+        <mat-label>API token</mat-label>
+        <input
+          matInput
+          formControlName="apiToken"
+          [type]="showToken() ? 'text' : 'password'"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+        />
+        <mat-icon matPrefix>key</mat-icon>
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="showToken.set(!showToken())"
+          [attr.aria-label]="showToken() ? 'Hide token' : 'Show token'"
+        >
+          <mat-icon>{{ showToken() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-hint>Sent as <code>Authorization: Bearer …</code> with every request.</mat-hint>
+      </mat-form-field>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button type="button" (click)="clearToken()" [disabled]="!form.controls.apiToken.value">Clear token</button>
+      <button mat-stroked-button type="button" (click)="testConnection()" [disabled]="health().status === 'loading' || saving()">
+        @if (health().status === 'loading') {
+          <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+          <mat-icon>network_check</mat-icon>
+        }
+        Test connection
+      </button>
+      <button mat-flat-button type="submit" [disabled]="form.invalid || saving() || !form.dirty">
+        <mat-icon>save</mat-icon>
+        Save
+      </button>
+    </mat-card-actions>
+
+    @if (health().status === 'error') {
+      <div class="health">
+        <app-error-banner title="Connection failed" [message]="health().error!" (retry)="testConnection()" />
+      </div>
+    } @else if (health().status === 'ready' && health().data; as h) {
+      <div class="health">
+        <div class="health-status" [class.up]="h.status === 'UP'" [class.down]="h.status !== 'UP'">
+          <mat-icon>{{ h.status === 'UP' ? 'check_circle' : 'warning' }}</mat-icon>
+          <span>Server {{ h.status }}@if (h.version) {, version {{ h.version }}}</span>
+        </div>
+        <mat-list dense>
+          @for (check of healthChecks(); track check.label) {
+            <mat-list-item>
+              <mat-icon matListItemIcon [class.ok]="check.ok" [class.bad]="!check.ok">{{ check.ok ? 'check' : 'close' }}</mat-icon>
+              <span matListItemTitle>{{ check.label }}</span>
+              @if (check.detail) {
+                <span matListItemLine>{{ check.detail }}</span>
+              }
+            </mat-list-item>
+          }
+        </mat-list>
+      </div>
+    }
+  </mat-card>
+
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Voice</mat-card-title>
+      <mat-card-subtitle>Language for voice commands and voice-note transcription</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-form-field class="full">
+        <mat-label>Voice language</mat-label>
+        <mat-select formControlName="voiceLanguage">
+          @for (lang of languages; track lang.code) {
+            <mat-option [value]="lang.code">{{ lang.label }} ({{ lang.code }})</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>translate</mat-icon>
+      </mat-form-field>
+      <div class="capability-row">
+        <mat-icon [class.ok]="speech.supported()" [class.bad]="!speech.supported()">{{ speech.supported() ? 'mic' : 'mic_off' }}</mat-icon>
+        <span>Speech recognition: {{ speech.supported() ? 'available' : 'not available on this device/browser' }}</span>
+      </div>
+      <div class="capability-row">
+        <mat-icon [class.ok]="recorder.supported()" [class.bad]="!recorder.supported()">{{ recorder.supported() ? 'graphic_eq' : 'block' }}</mat-icon>
+        <span>Audio recording: {{ recorder.supported() ? 'available' : 'not available' }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>This device</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <dl class="info">
+        <dt>Platform</dt>
+        <dd>{{ info.platform }}{{ info.isNative ? ' (native app)' : ' (browser / PWA)' }}</dd>
+        <dt>Secure context</dt>
+        <dd>{{ info.secureContext ? 'yes' : 'no — some browser features (camera, microphone) need https or localhost' }}</dd>
+        <dt>Notifications</dt>
+        <dd>
+          {{ notifications.permission() }}
+          @if (notifications.permission() === 'prompt') {
+            <button mat-button type="button" (click)="requestNotificationPermission()">Allow</button>
+          }
+        </dd>
+        <dt>User agent</dt>
+        <dd class="ua">{{ info.userAgent }}</dd>
+      </dl>
+    </mat-card-content>
+  </mat-card>
+</form>

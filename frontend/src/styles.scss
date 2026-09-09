@@ -1,3 +1,4 @@
+// Global styles: Angular Material M3 theme (azure/blue), typography, DocShelf helpers
 // Include theming for Angular Material with `mat.theme()`.
 // This Sass mixin will define CSS variables that are used for styling Angular Material
 // components according to the Material 3 design spec.
@@ -37,3 +38,25 @@ body {
   height: 100%;
 }
 /* You can add global styles to this file, and also import other style files */
+
+// ---- DocShelf globals ----
+html {
+  // Follow the OS theme; Material system tokens switch automatically.
+  color-scheme: light dark;
+}
+
+.page-title {
+  font: var(--mat-sys-headline-small);
+  margin: 0 0 16px;
+}
+
+.toast-error {
+  --mdc-snackbar-container-color: var(--mat-sys-error-container);
+  --mdc-snackbar-supporting-text-color: var(--mat-sys-on-error-container);
+  --mat-snack-bar-button-color: var(--mat-sys-on-error-container);
+}
+
+.toast-success {
+  --mdc-snackbar-container-color: #dcf5e3;
+  --mdc-snackbar-supporting-text-color: #0b5b2a;
+}

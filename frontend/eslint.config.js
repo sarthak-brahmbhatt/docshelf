@@ -1,3 +1,4 @@
+// ESLint flat config: angular-eslint + typescript-eslint recommended rules for TS and templates
 // @ts-check
 const eslint = require('@eslint/js');
 const { defineConfig } = require('eslint/config');

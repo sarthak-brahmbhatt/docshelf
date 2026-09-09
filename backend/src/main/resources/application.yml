@@ -72,6 +72,10 @@ management:
     web:
       exposure:
         include: health,info
+  health:
+    # SMTP reachability is reported by /api/v1/system/health (B7); an unreachable mail server must not mark the backend DOWN.
+    mail:
+      enabled: false
   endpoint:
     health:
       show-details: when-authorized

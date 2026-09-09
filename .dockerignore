@@ -1,0 +1,11 @@
+# Root build context is used by backend/Dockerfile; keep it small.
+.git
+.github
+docs
+frontend
+data
+backups
+backend/target
+**/node_modules
+**/.DS_Store
+.env

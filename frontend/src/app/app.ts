@@ -1,12 +1,11 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+// Root component: renders the application shell.
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { AppShellComponent } from './shell/app-shell.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.scss'
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [AppShellComponent],
+  template: '<app-shell />',
 })
-export class App {
-  protected readonly title = signal('frontend');
-}
+export class App {}

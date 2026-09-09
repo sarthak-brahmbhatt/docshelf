@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   },
   plugins: {
     LocalNotifications: {
-      smallIcon: 'ic_stat_icon_config_sample',
+      // Uses the launcher icon by default; add a monochrome drawable and set smallIcon here for a proper status-bar icon.
       iconColor: '#1e5aa8',
     },
   },

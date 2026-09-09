@@ -1,6 +1,6 @@
 {
-  "name": "frontend",
-  "short_name": "frontend",
+  "name": "DocShelf",
+  "short_name": "DocShelf",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",
@@ -53,5 +53,8 @@
       "type": "image/png",
       "purpose": "maskable any"
     }
-  ]
+  ],
+  "description": "Family document vault and assistant",
+  "theme_color": "#1e5aa8",
+  "background_color": "#fafafa"
 }

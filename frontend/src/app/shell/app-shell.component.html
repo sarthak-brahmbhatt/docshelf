@@ -1,0 +1,82 @@
+<!-- App shell layout: toolbar, navigation rail / drawer, content outlet, phone bottom bar -->
+<mat-sidenav-container class="shell" [class.handset]="isHandset()">
+  @if (isHandset()) {
+    <mat-sidenav mode="over" [opened]="drawerOpen()" (closedStart)="closeDrawer()" class="drawer">
+      <div class="drawer-header">
+        <mat-icon>inventory_2</mat-icon>
+        <span>DocShelf</span>
+      </div>
+      <mat-nav-list>
+        @for (item of navItems; track item.path) {
+          <a mat-list-item [routerLink]="item.path" routerLinkActive="active" (click)="closeDrawer()">
+            <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label }}</span>
+          </a>
+        }
+      </mat-nav-list>
+    </mat-sidenav>
+  }
+
+  <mat-sidenav-content class="content-wrap">
+    <mat-toolbar class="toolbar">
+      @if (isHandset()) {
+        <button mat-icon-button type="button" aria-label="Open navigation" (click)="toggleDrawer()">
+          <mat-icon>menu</mat-icon>
+        </button>
+      } @else {
+        <mat-icon class="brand-icon" aria-hidden="true">inventory_2</mat-icon>
+      }
+      <span class="title">{{ pageTitle() }}</span>
+      <span class="spacer"></span>
+      @if (showSetupHint()) {
+        <a
+          mat-icon-button
+          routerLink="/settings"
+          matTooltip="Server URL or API token not set"
+          aria-label="Server not configured — open settings"
+          class="warn"
+        >
+          <mat-icon>cloud_off</mat-icon>
+        </a>
+      }
+    </mat-toolbar>
+
+    <div class="body">
+      @if (!isHandset()) {
+        <nav class="rail" aria-label="Main navigation">
+          @for (item of navItems; track item.path) {
+            <a
+              class="rail-item"
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              [matTooltip]="item.label"
+              matTooltipPosition="right"
+            >
+              <mat-icon>{{ item.icon }}</mat-icon>
+              <span class="rail-label">{{ item.label }}</span>
+            </a>
+          }
+        </nav>
+      }
+
+      <main class="page" [class.with-bottom-nav]="isHandset()">
+        <router-outlet />
+      </main>
+    </div>
+
+    @if (isHandset()) {
+      <nav class="bottom-nav" aria-label="Main navigation">
+        @for (item of bottomItems; track item.path) {
+          <a class="bottom-item" [routerLink]="item.path" routerLinkActive="active">
+            <mat-icon>{{ item.icon }}</mat-icon>
+            <span>{{ item.label }}</span>
+          </a>
+        }
+        <button class="bottom-item" type="button" (click)="toggleDrawer()" aria-label="More">
+          <mat-icon>more_horiz</mat-icon>
+          <span>More</span>
+        </button>
+      </nav>
+    }
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -6,7 +6,6 @@ import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -121,7 +120,6 @@ public class ApiExceptionHandler {
         if (path != null && path.startsWith("uri=")) {
             pd.setInstance(URI.create(path.substring(4)));
         }
-        pd.setProperties(pd.getProperties() == null ? Map.of() : pd.getProperties());
         return pd;
     }
 }

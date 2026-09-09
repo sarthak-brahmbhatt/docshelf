@@ -169,8 +169,7 @@ export class SpeechService {
       rec.onresult = (ev) => {
         let text = '';
         let final = false;
-        for (let i = 0; i < ev.results.length; i++) {
-          const result = ev.results[i];
+        for (const result of Array.from(ev.results)) {
           text += result[0]?.transcript ?? '';
           if (result.isFinal) final = true;
         }

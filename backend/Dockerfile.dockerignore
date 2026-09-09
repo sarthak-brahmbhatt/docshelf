@@ -1,0 +1,11 @@
+# BuildKit picks this up for `docker build -f backend/Dockerfile .` (context = repo root); paths are relative to the root
+.git
+.env
+data/
+docs/
+frontend/
+backend/target/
+backend/.idea/
+backend/*.iml
+**/.DS_Store
+**/*.log
